@@ -137,6 +137,10 @@ StrategyConfig:
 
 同样，这种分配并不是完全精确的。如果每个时长是前一个时长的倍数，`dense` 策略能够较精准地保持希望得到的备份分布。
 
+##### interval
+
+这个策略和 AutoQuickBackup 的备份方式类似，`StrategyConfig` 表示 AutoQuickBackup 的 `Interval`，即备份周期为其表示的时长，且所有备份都会一直保留，直到槽位填满时删除编号最大的槽位。这里仍然可以使用上述时间单位。例如 `StrategyConfig` 为 `5` 或 `5min` 时，备份方式与 AutoQuickBackup 的默认设置类似。
+
 **通过代码增加其他策略的方法详见[后文](#增加其他策略)。**
 
 #### WorldNames

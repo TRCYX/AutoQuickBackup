@@ -64,6 +64,10 @@ def print_waiting(server: ServerInterface, info: Info):
     print_message(server, info, '等待其他任务完成...')
 
 
+def disable_this_plugin(server: ServerInterface):
+    server.disable_plugin(os.path.basename(__file__)[:-3])
+
+
 # endregion
 
 # region 配置
@@ -250,13 +254,13 @@ class TimeListStrategy(Strategy):
         def error(msg: str):
             info: Any = FakeInfo()
             print_message(server, info, msg)
+            disable_this_plugin(server)
+            raise RuntimeError(msg)
 
-        if not config:
+        if not isinstance(config, list) or len(config) == 0:
             error('§4StrategyConfig 为空§r')
-            return
         if not all(type(t) in [int, float, str] for t in config):
             error('§4StrategyConfig 格式不正确§r')
-            return
 
         try:
             self.config = sorted(map(time_length_to_seconds, config))
@@ -333,9 +337,33 @@ class DenseStrategy(TimeListStrategy):
         return result
 
 
+class IntervalStrategy(Strategy):
+    def __init__(self, server: ServerInterface, config: Union[int, float, str]):
+        def error(msg: str):
+            info: Any = FakeInfo()
+            print_message(server, info, msg)
+            disable_this_plugin(server)
+            raise RuntimeError(msg)
+
+        if type(config) not in [int, float, str]:
+            error(f'§4{config} 格式不正确§r')
+
+        try:
+            self.config = time_length_to_seconds(config)
+        except ValueError:
+            error(f'§4策略初始化失败: \'{config}\' 不是有效的时间长度§r')
+
+    def interval(self) -> float:
+        return self.config
+
+    def decide_which_to_keep(self, ages: List[float]) -> List[bool]:
+        return [True] * len(ages)
+
+
 STRATEGIES: Dict[str, Callable[[ServerInterface, Any], Strategy]] = {
     'default': DefaultStrategy,
-    'dense': DenseStrategy
+    'dense': DenseStrategy,
+    'interval': IntervalStrategy
 }
 strategy: Strategy
 
@@ -350,8 +378,7 @@ def init_strategy(server: ServerInterface, info: Info):
         strategy_factory = STRATEGIES[config['Strategy']]
         strategy = strategy_factory(server, config['StrategyConfig'])
     except:
-        # 禁用自己
-        server.disable_plugin(os.path.basename(__file__)[:-3])
+        disable_this_plugin(server)
 
         traceback.print_exc()
         print_message(server, info, '初始化策略失败, 错误代码: ' +
