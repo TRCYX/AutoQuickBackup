@@ -10,7 +10,7 @@ import shutil
 import sys
 import time
 import traceback
-from collections import deque
+from collections import ChainMap, deque
 from enum import Enum, auto
 from threading import Lock, Thread
 from typing import *
@@ -123,7 +123,7 @@ def read_config():
         return
     with open(CONFIG_FILE_NAME, 'r', encoding='UTF-8') as rf:
         try:
-            config = yaml.safe_load(rf)
+            config = ChainMap(yaml.safe_load(rf), DEFAULT_CONFIG)
         except yaml.YAMLError:
             save_default_config()
 
@@ -583,6 +583,9 @@ def create_backup(server: ServerInterface, info: Info, bar: BackupBar) -> Option
                 break
             if plugin_unloaded:
                 server.reply(info, '插件重载, §a备份§r中断!')
+                return None
+            if not server.is_server_running():
+                server.reply(info, '服务器关闭, §a备份§r中断!')
                 return None
 
         bar.step()
