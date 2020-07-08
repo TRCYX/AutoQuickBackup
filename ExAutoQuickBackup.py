@@ -395,13 +395,13 @@ def copy_worlds(src_folder: str, dst_folder: str):
     def filter_ignore(path, files):
         return [file for file in files if file == 'session.lock' and config['IgnoreSessionLock']]
     for world in config['WorldNames']:
-        shutil.copytree(os.path.join(src_folder, world),
-                        os.path.join(dst_folder, world), ignore=filter_ignore)
+        shutil.copytree(os.path.realpath(os.path.join(src_folder, world)),
+                        os.path.realpath(os.path.join(dst_folder, world)), ignore=filter_ignore)
 
 
 def remove_worlds(folder: str):
     for world in config['WorldNames']:
-        shutil.rmtree(os.path.join(folder, world))
+        shutil.rmtree(os.path.realpath(os.path.join(folder, world)))
 
 # endregion
 
